@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="doc-title">Alfred - I tuoi prezzi si aggiornano da soli.</title>
+<meta id="meta-desc" name="description" content="Alfred è l'agente di pricing autonomo per strutture ricettive italiane. Aggiorna i tuoi prezzi automaticamente con supporto consulenziale dedicato.">
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9A96E;
+    --gold-light: #E2C88A;
+    --gold-dark: #9B7A45;
+    --black: #0A0A0A;
+    --dark: #111111;
+    --dark-2: #1A1A1A;
+    --dark-3: #222222;
+    --dark-4: #2A2A2A;
+    --white: #FFFFFF;
+    --white-90: rgba(255,255,255,0.9);
+    --white-70: rgba(255,255,255,0.7);
+    --white-50: rgba(255,255,255,0.5);
+    --white-20: rgba(255,255,255,0.2);
+    --white-10: rgba(255,255,255,0.1);
+    --white-05: rgba(255,255,255,0.05);
+    --gold-10: rgba(201,169,110,0.1);
+    --gold-20: rgba(201,169,110,0.2);
+    --gold-30: rgba(201,169,110,0.3);
+    --font-serif: 'Georgia', 'Times New Roman', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--black);
+    color: var(--white);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ===== TYPOGRAPHY ===== */
+  .serif { font-family: var(--font-serif); }
+  .gold { color: var(--gold); }
+  .small-cap {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* ===== LAYOUT ===== */
+  .container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  section { padding: 100px 0; }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid transparent;
+    transition: var(--transition);
+  }
+  nav.scrolled {
+    background: transparent;
+    border-bottom-color: transparent;
+  }
+  .nav-logo {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+  }
+  .nav-logo span {
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--white-50);
+    display: block;
+    margin-top: -2px;
+  }
+  .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    background: var(--gold);
+    color: var(--black);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: var(--transition);
+  }
+  .nav-cta:hover {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(201,169,110,0.35);
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--white-10);
+    background: rgba(17,17,17,0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .lang-switch button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 5px 7px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    line-height: 1;
+    opacity: 0.55;
+    transition: var(--transition);
+  }
+  .lang-switch button:hover { opacity: 0.9; }
+  .lang-switch button.active {
+    opacity: 1;
+    background: var(--gold-10);
+    box-shadow: 0 0 0 1px var(--gold-30);
+  }
+
+  /* ===== HERO ===== */
+  #hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: left;
+    padding: 0;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .hero-bg video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 42%;
+    transform: scale(1);
+  }
+  .hero-bg video::-webkit-media-controls,
+  .hero-bg video::-webkit-media-controls-start-playback-button,
+  .hero-bg video::-webkit-media-controls-panel {
+    display:none !important;
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      160deg,
+      rgba(10,10,10,0.78) 0%,
+      rgba(10,10,10,0.62) 42%,
+      rgba(10,10,10,0.76) 100%
+    );
+  }
+  .hero-overlay-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 260px;
+    background: linear-gradient(to top, var(--black), transparent);
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    width: min(1140px, calc(100% - 48px));
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 40px;
+    align-items: center;
+  }
+  .hero-badge {
+    position: fixed;
+    top: 82px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 101;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: var(--gold-10);
+    border: 1px solid var(--gold-30);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0;
+    backdrop-filter: blur(8px);
+  }
+  .nav-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: var(--gold-10);
+    border: 1px solid var(--gold-30);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .nav-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #4ADE80;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4ADE80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #4ADE80;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4ADE80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.3); }
+  }
+  .hero-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-weight: 400;
+    line-height: 1.12;
+    color: var(--white);
+    margin-top: 96px;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .hero-headline .accent {
+    color: var(--gold);
+    font-style: italic;
+  }
+  .hero-subline {
+    font-family: var(--font-serif);
+    font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--gold);
+    margin-bottom: 28px;
+    letter-spacing: 0.01em;
+  }
+  .hero-copy {
+    max-width: 560px;
+  }
+  .hero-desc {
+    font-size: 1rem;
+    color: var(--white-70);
+    max-width: 520px;
+    margin: 0 0 18px;
+    line-height: 1.55;
+  }
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    background: var(--gold);
+    color: var(--black);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: var(--transition);
+    border: none;
+    cursor: pointer;
+  }
+  .btn-primary:hover {
+    background: var(--gold-light);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(201,169,110,0.4);
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 32px;
+    background: transparent;
+    color: var(--white-90);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--white-20);
+    transition: var(--transition);
+  }
+  .btn-secondary:hover {
+    border-color: var(--gold-30);
+    color: var(--gold);
+    transform: translateY(-1px);
+  }
+  .hero-stats {
+    position: relative;
+    margin-top: 108px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(17,17,17,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius);
+    overflow: hidden;
+    white-space: normal;
+    justify-self: end;
+    width: 100%;
+    max-width: 280px;
+  }
+  .hero-stat {
+    padding: 18px 22px;
+    text-align: center;
+    border-right: none;
+    border-bottom: 1px solid var(--white-10);
+  }
+  .hero-stat:last-child { border-bottom: none; }
+  .hero-stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .hero-stat-label {
+    font-size: 0.7rem;
+    color: var(--white-50);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ===== DIVIDER ===== */
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 24px auto;
+  }
+
+  /* ===== SECTION HEADERS ===== */
+  .section-header {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .section-subtitle {
+    font-size: 1rem;
+    color: var(--white-60, var(--white-50));
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ===== PROBLEM SECTION ===== */
+  #problem {
+    background: var(--dark);
+    position: relative;
+  }
+  #problem::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 1px; height: 80px;
+    background: linear-gradient(to bottom, var(--gold-30), transparent);
+  }
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    background: var(--white-05);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .problem-card {
+    padding: 48px 40px;
+    background: var(--dark);
+    transition: var(--transition);
+    position: relative;
+  }
+  .problem-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--gold-10) 0%, transparent 60%);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  .problem-card:hover::after { opacity: 1; }
+  .problem-number {
+    font-family: var(--font-serif);
+    font-size: 4rem;
+    font-weight: 400;
+    color: var(--white-05);
+    line-height: 1;
+    margin-bottom: -12px;
+    font-style: italic;
+  }
+  .problem-icon {
+    font-size: 1.8rem;
+    margin-bottom: 16px;
+  }
+  .problem-title {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+  .problem-desc {
+    font-size: 0.92rem;
+    color: var(--white-50);
+    line-height: 1.7;
+  }
+
+  /* ===== HOW IT WORKS ===== */
+  #how {
+    background: var(--black);
+    position: relative;
+  }
+  .steps-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    position: relative;
+  }
+  .steps-connector {
+    position: absolute;
+    top: 68px;
+    left: calc(25% - 20px);
+    right: calc(25% - 20px);
+    height: 1px;
+    background: linear-gradient(to right, transparent 0%, var(--gold-30) 20%, var(--gold-30) 80%, transparent 100%);
+    z-index: 0;
+  }
+  .step-card {
+    text-align: center;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .step-number-ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 28px;
+    position: relative;
+    background: var(--black);
+  }
+  .step-number-ring::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--gold-10) 0%, transparent 70%);
+  }
+  .step-number {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .step-icon {
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+  }
+  .step-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+  }
+  .step-desc {
+    font-size: 0.85rem;
+    color: var(--white-50);
+    line-height: 1.65;
+  }
+
+  /* ===== DASHBOARD SECTION ===== */
+  #dashboard {
+    background: var(--dark);
+    position: relative;
+    overflow: hidden;
+  }
+  #dashboard::before {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .dashboard-wrapper {
+    background: var(--dark-2);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,169,110,0.08);
+  }
+  .dashboard-topbar {
+    padding: 16px 24px;
+    background: var(--dark-3);
+    border-bottom: 1px solid var(--white-10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .dash-dots {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+  }
+  .dash-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .dash-dot.red { background: #FF5F57; }
+  .dash-dot.yellow { background: #FFBD2E; }
+  .dash-dot.green { background: #28CA41; }
+  .dashboard-title-bar {
+    font-size: 0.78rem;
+    color: var(--white-50);
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .dashboard-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #4ADE80;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .dashboard-status::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #4ADE80;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4ADE80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--white-10);
+  }
+  .dash-metric {
+    padding: 24px 28px;
+    border-right: 1px solid var(--white-10);
+  }
+  .dash-metric:last-child { border-right: none; }
+  .dash-metric-label {
+    font-size: 0.7rem;
+    color: var(--white-40, var(--white-50));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .dash-metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .dash-metric-delta {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4ADE80;
+  }
+  .dashboard-properties {
+    padding: 18px 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .property-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--dark-3);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius);
+    transition: var(--transition);
+  }
+  .property-card:hover {
+    border-color: var(--gold-30);
+    background: var(--dark-4);
+  }
+  .property-avatar {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .property-info { flex: 1; min-width: 0; }
+  .property-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .property-meta {
+    font-size: 0.75rem;
+    color: var(--white-50);
+  }
+  .property-price-block {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .property-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .price-up { color: #4ADE80; }
+  .price-down { color: #F87171; }
+  .property-delta {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4ADE80;
+  }
+  .property-badge {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .badge-auto {
+    background: var(--gold-10);
+    color: var(--gold);
+    border: 1px solid var(--gold-30);
+  }
+  .badge-live {
+    background: rgba(74,222,128,0.1);
+    color: #4ADE80;
+    border: 1px solid rgba(74,222,128,0.3);
+  }
+  .badge-event {
+    background: rgba(168,85,247,0.1);
+    color: #C084FC;
+    border: 1px solid rgba(168,85,247,0.3);
+  }
+
+  /* ===== TIMELINE SECTION ===== */
+  #timeline {
+    background: var(--black);
+    position: relative;
+  }
+  .timeline-container {
+    background: var(--dark-2);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+  .timeline-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--white-10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .timeline-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--white-70);
+    letter-spacing: 0.06em;
+  }
+  .timeline-date {
+    font-size: 0.75rem;
+    color: var(--white-40, var(--white-50));
+    letter-spacing: 0.04em;
+  }
+  .chart-area {
+    padding: 32px 32px 0;
+    position: relative;
+    height: auto;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  /* SVG chart */
+  .chart-svg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 900 / 260;
+    display: block;
+    overflow: visible;
+  }
+  .timeline-events {
+    padding: 0 32px 32px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    margin-top: 16px;
+  }
+  .tl-event {
+    padding: 14px 12px;
+    background: var(--dark-3);
+    border-radius: 8px;
+    position: relative;
+  }
+  .tl-time {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .tl-desc {
+    font-size: 0.72rem;
+    color: var(--white-50);
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .tl-price {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .tl-direction {
+    font-size: 0.72rem;
+    color: #4ADE80;
+    font-weight: 600;
+  }
+  .timeline-result {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--white-10);
+  }
+  .tl-result-item {
+    padding: 14px 20px;
+    border-right: 1px solid var(--white-10);
+    text-align: center;
+  }
+  .tl-result-item:last-child { border-right: none; }
+  .tl-result-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 2px;
+  }
+  .tl-result-label {
+    font-size: 0.72rem;
+    color: var(--white-50);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ===== ROADMAP SECTION ===== */
+  #roadmap {
+    background: var(--dark);
+    position: relative;
+    overflow: hidden;
+  }
+  #roadmap::before {
+    content: '';
+    position: absolute;
+    bottom: -300px; left: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(201,169,110,0.04) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .roadmap-track {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+  .roadmap-track::before {
+    content: '';
+    position: absolute;
+    top: 36px;
+    left: 36px;
+    right: 36px;
+    height: 1px;
+    background: linear-gradient(to right, var(--gold-30) 0%, var(--gold-20) 50%, var(--white-10) 100%);
+  }
+  .roadmap-item {
+    flex: 1;
+    padding: 0 16px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .roadmap-icon-wrap {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    position: relative;
+    transition: var(--transition);
+  }
+  .roadmap-icon-wrap.active {
+    background: var(--gold);
+    box-shadow: 0 0 0 8px var(--gold-10), 0 0 40px rgba(201,169,110,0.3);
+  }
+  .roadmap-icon-wrap.coming {
+    background: var(--dark-3);
+    border: 1px solid var(--white-10);
+    filter: grayscale(0.5) opacity(0.7);
+  }
+  .roadmap-phase {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .roadmap-phase.active { color: var(--gold); }
+  .roadmap-phase.coming { color: var(--white-30, var(--white-50)); }
+  .roadmap-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .roadmap-label.coming { color: var(--white-50); }
+  .roadmap-sub {
+    font-size: 0.78rem;
+    color: var(--white-40, var(--white-50));
+    line-height: 1.5;
+  }
+  .roadmap-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 10px;
+  }
+  .roadmap-badge.live { background: rgba(74,222,128,0.12); color: #4ADE80; border: 1px solid rgba(74,222,128,0.3); }
+  .roadmap-badge.q2 { background: var(--gold-10); color: var(--gold); border: 1px solid var(--gold-30); }
+  .roadmap-badge.q3 { background: var(--white-05); color: var(--white-50); border: 1px solid var(--white-10); }
+  .roadmap-badge.q4 { background: var(--white-05); color: var(--white-50); border: 1px solid var(--white-10); }
+
+  /* ===== TESTIMONIALS ===== */
+  #testimonials {
+    background: var(--black);
+    position: relative;
+  }
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .testimonial-card {
+    padding: 36px 32px;
+    background: var(--dark-2);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius-lg);
+    position: relative;
+    transition: var(--transition);
+  }
+  .testimonial-card:hover {
+    border-color: var(--gold-30);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  }
+  .testimonial-card::before {
+    content: '"';
+    font-family: var(--font-serif);
+    font-size: 5rem;
+    color: var(--gold-20);
+    position: absolute;
+    top: 20px;
+    right: 28px;
+    line-height: 1;
+  }
+  .testimonial-stars {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 20px;
+  }
+  .star {
+    width: 14px; height: 14px;
+    color: var(--gold);
+    font-size: 0.85rem;
+  }
+  .testimonial-text {
+    font-size: 0.95rem;
+    color: var(--white-80, var(--white-70));
+    line-height: 1.75;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .author-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dark-4), var(--dark-3));
+    border: 1.5px solid var(--gold-30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .author-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .author-meta {
+    font-size: 0.75rem;
+    color: var(--white-50);
+  }
+  .testimonial-delta {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--white-10);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .delta-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4ADE80;
+  }
+  .delta-label {
+    font-size: 0.75rem;
+    color: var(--white-50);
+  }
+
+  /* ===== PRICING SECTION ===== */
+  #pricing {
+    background: var(--dark);
+    position: relative;
+  }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .pricing-card {
+    padding: 40px 36px;
+    background: var(--dark-2);
+    border: 1px solid var(--white-10);
+    border-radius: var(--radius-lg);
+    position: relative;
+    transition: var(--transition);
+  }
+  .pricing-card.featured {
+    border-color: var(--gold);
+    background: linear-gradient(160deg, rgba(201,169,110,0.07) 0%, var(--dark-2) 50%);
+    box-shadow: 0 0 0 1px rgba(201,169,110,0.15), 0 24px 60px rgba(0,0,0,0.5);
+    transform: scale(1.02);
+  }
+  .pricing-card:hover:not(.featured) {
+    border-color: var(--gold-30);
+    transform: translateY(-3px);
+  }
+  .pricing-ribbon {
+    position: absolute;
+    top: -1px; right: 28px;
+    padding: 6px 14px;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-radius: 0 0 8px 8px;
+  }
+  .pricing-tier {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .pricing-price {
+    margin-bottom: 6px;
+  }
+  .price-amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+  }
+  .price-currency {
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--white-70);
+    vertical-align: top;
+    margin-top: 8px;
+    display: inline-block;
+  }
+  .price-period {
+    font-size: 0.82rem;
+    color: var(--white-50);
+    margin-top: 6px;
+  }
+  .pricing-divider {
+    height: 1px;
+    background: var(--white-10);
+    margin: 24px 0;
+  }
+  .pricing-features {
+    list-style: none;
+    margin-bottom: 32px;
+  }
+  .pricing-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.87rem;
+    color: var(--white-70);
+    padding: 7px 0;
+    line-height: 1.4;
+  }
+  .pricing-features li::before {
+    content: '';
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--gold-10);
+    border: 1px solid var(--gold-30);
+    flex-shrink: 0;
+    margin-top: 1px;
+    position: relative;
+  }
+  .pricing-features li::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23C9A96E'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+    background-size: cover;
+    background-color: var(--gold-10);
+  }
+  .pricing-cta {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+  .pricing-cta.primary {
+    background: var(--gold);
+    color: var(--black);
+  }
+  .pricing-cta.primary:hover {
+    background: var(--gold-light);
+    box-shadow: 0 8px 30px rgba(201,169,110,0.35);
+  }
+  .pricing-cta.outline {
+    background: transparent;
+    color: var(--white-70);
+    border: 1px solid var(--white-20);
+  }
+  .pricing-cta.outline:hover {
+    border-color: var(--gold-30);
+    color: var(--gold);
+  }
+  .pricing-note {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 0.82rem;
+    color: var(--white-40, var(--white-50));
+  }
+  .pricing-note a { color: var(--gold); }
+
+  /* ===== FINAL CTA ===== */
+  #cta {
+    background: var(--dark);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  #cta::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px; height: 500px;
+    background: radial-gradient(ellipse, rgba(201,169,110,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .cta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: rgba(74,222,128,0.08);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4ADE80;
+    margin-bottom: 32px;
+  }
+  .cta-title {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 4.5vw, 3.8rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta-desc {
+    font-size: 1.05rem;
+    color: var(--white-60, var(--white-50));
+    max-width: 480px;
+    margin: 0 auto 48px;
+    line-height: 1.7;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: var(--black);
+    padding: 48px 24px 32px;
+    border-top: 1px solid var(--white-10);
+    text-align: center;
+  }
+  .footer-logo {
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    font-style: italic;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .footer-tagline {
+    font-size: 0.82rem;
+    color: var(--white-40, var(--white-50));
+    margin-bottom: 24px;
+  }
+  .footer-links {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .footer-links a {
+    font-size: 0.78rem;
+    color: var(--white-40, var(--white-50));
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: var(--transition);
+  }
+  .footer-links a:hover { color: var(--gold); }
+  .footer-copy {
+    font-size: 0.75rem;
+    color: var(--white-30, var(--white-50));
+  }
+  .footer-copy a { color: var(--gold-dark); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    section { padding: 72px 0; }
+    .problem-grid { grid-template-columns: 1fr; }
+    .steps-container { grid-template-columns: repeat(2, 1fr); }
+    .steps-connector { display: none; }
+    .dashboard-metrics { grid-template-columns: repeat(2, 1fr); }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .pricing-card.featured { transform: none; }
+    .timeline-events { grid-template-columns: repeat(2, 1fr); }
+    .hero-content {
+      width: min(1140px, calc(100% - 44px));
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 24px;
+      align-items: center;
+    }
+    .hero-copy { max-width: 560px; }
+    .hero-headline {
+      margin-top: 96px;
+      font-size: clamp(2rem, 5.8vw, 3.8rem);
+    }
+    .hero-desc { max-width: 500px; font-size: 1rem; line-height: 1.55; }
+    .hero-actions { max-width: 500px; }
+    .hero-stats {
+      position: relative;
+      transform: none;
+      margin: 0;
+      width: 240px;
+      flex-wrap: nowrap;
+      max-width: 240px;
+      justify-self: end;
+      align-self: center;
+      margin-top: 96px;
+    }
+    .hero-bg video {
+      object-position: 50% 40%;
+      transform: scale(1);
+    }
+    .hero-stat { min-width: 0; }
+    #hero { padding-bottom: 80px; }
+    .roadmap-track {
+      flex-direction: column;
+      gap: 20px;
+    }
+    .roadmap-track::before { display: none; }
+    .roadmap-item { padding: 0; text-align: left; display: flex; gap: 16px; align-items: flex-start; }
+    .roadmap-icon-wrap { margin: 0; flex-shrink: 0; width: 52px; height: 52px; font-size: 1.3rem; }
+  }
+  @media (max-width: 600px) {
+    .nav-right { gap: 8px; }
+    .lang-switch button { padding: 4px 6px; font-size: 0.95rem; }
+    #hero {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 0;
+      padding-bottom: 90px;
+    }
+    .hero-content {
+      width: 100%;
+      max-width: 100%;
+      padding: 148px 20px 0;
+      margin-top: 0;
+      text-align: left;
+      display: block;
+    }
+    .hero-copy {
+      min-width: 0;
+      max-width: none;
+      padding-right: 158px;
+    }
+    .hero-headline {
+      font-size: 1.78rem;
+      line-height: 1.06;
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-align: left;
+      max-width: 66%;
+    }
+    .hero-desc {
+      margin: 0 0 18px;
+      max-width: 64%;
+      text-align: left;
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+    .hero-actions {
+      margin-top: 0;
+      justify-content: flex-start;
+      gap: 10px;
+      max-width: 64%;
+      flex-direction: column;
+      align-items: stretch;
+      flex-wrap: nowrap;
+    }
+    .hero-actions .btn-primary,
+    .hero-actions .btn-secondary {
+      width: auto;
+      min-width: 210px;
+      white-space: nowrap;
+      justify-content: center;
+    }
+    .hero-stats {
+      position: absolute;
+      right: 10px;
+      left: auto;
+      top: 230px;
+      bottom: auto;
+      transform: none;
+      width: 172px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      margin: 0;
+      max-width: 172px;
+      justify-self: end;
+      align-self: start;
+    }
+    .hero-bg video {
+      object-position: 50% 40%;
+      transform: scale(1.02);
+    }
+    .hero-stat {
+      width: 100%;
+      min-height: 82px;
+      padding: 12px 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-right: none;
+      border-bottom: 1px solid var(--white-10);
+    }
+    .hero-stat:last-child { border-bottom: none; }
+    .hero-stat-value {
+      width: 100%;
+      text-align: center;
+      font-size: 1.38rem;
+    }
+    .hero-stat-label {
+      width: 100%;
+      text-align: center;
+      line-height: 1.22;
+      white-space: normal;
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      padding: 0 4px;
+    }
+    .hero-subline { font-size: 1.3rem; }
+    nav { padding: 16px 20px; }
+    .container { padding: 0 20px; }
+    .steps-container { grid-template-columns: 1fr; }
+    .dashboard-metrics { grid-template-columns: 1fr 1fr; }
+    .timeline-events { grid-template-columns: 1fr; }
+    .timeline-result { grid-template-columns: 1fr; }
+    .tl-result-item { border-right: none; border-bottom: 1px solid var(--white-10); }
+    .footer-links { gap: 16px; }
+  }
+
+  /* ===== ANIMATIONS ===== */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .fade-up:nth-child(2) { transition-delay: 0.1s; }
+  .fade-up:nth-child(3) { transition-delay: 0.2s; }
+  .fade-up:nth-child(4) { transition-delay: 0.3s; }
+
+  /* Gold shimmer on hover */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent);
+    transform: skewX(-15deg);
+    transition: 0.7s;
+  }
+  .shimmer:hover::after { left: 150%; }
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav id="navbar">
+  <div class="nav-logo">
+    Alfred
+    <span data-i18n="navSub">Pricing Autonomo</span>
+  </div>
+  <div class="nav-right">
+    <div class="lang-switch" role="group" aria-label="Lingua / Language">
+      <button type="button" class="lang-btn active" data-lang="it" title="Italiano" aria-pressed="true">🇮🇹</button>
+      <button type="button" class="lang-btn" data-lang="en" title="English" aria-pressed="false">🇬🇧</button>
+    </div>
+    <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="nav-cta" data-i18n="navCta">Inizia</a>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <div class="hero-bg">
+    <video id="hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true">
+      <source src="hero-bg.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-overlay-bottom"></div>
+
+  <div class="hero-content">
+    <div class="hero-copy">
+      <h1 class="hero-headline" data-i18n-html="heroHeadline">
+        Stai perdendo più guadagni<br>
+        <span class="accent">di quelli che pensi.</span>
+      </h1>
+      <p class="hero-desc" data-i18n="heroDesc">
+        Alfred analizza domanda, eventi, competitor e stagionalità e aggiorna automaticamente i prezzi per farti guadagnare di più.
+      </p>
+
+      <div class="hero-actions">
+        <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="btn-primary shimmer" data-i18n="heroCtaPrimary">
+          Prova ora
+        </a>
+        <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="btn-secondary" data-i18n="heroCtaSecondary">
+          Come funziona
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-i18n="heroStat1v">Automatic</div>
+        <div class="hero-stat-label" data-i18n="heroStat1l">Pricing live</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-i18n="heroStat2v">Attivo</div>
+        <div class="hero-stat-label" data-i18n="heroStat2l">24/7</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-i18n="heroStat3v">Live</div>
+        <div class="hero-stat-label" data-i18n="heroStat3l">Consulenza inclusa</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">+28%</div>
+        <div class="hero-stat-label" data-i18n="heroStat4l">RevPAR medio</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROBLEM ===== -->
+<section id="problem">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="problemEyebrow">Il problema</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="problemTitle">Ogni giorno che non aggiorni i prezzi,<br><em>perdi soldi.</em></h2>
+      <p class="section-subtitle" data-i18n="problemSub">Ogni stanza venduta al prezzo sbagliato è margine perso per sempre.</p>
+    </div>
+
+    <div class="problem-grid">
+      <div class="problem-card fade-up">
+        <div class="problem-number">01</div>
+        <div class="problem-icon">⏱️</div>
+        <h3 class="problem-title" data-i18n="prob1t">I competitor cambiano i prezzi ogni giorno, tu no.</h3>
+        <p class="problem-desc" data-i18n="prob1d">Mentre il mercato si muove, i tuoi prezzi restano fermi. Chi aggiorna in tempo reale guadagna di più. Se non lo fai, lasci margine agli altri.</p>
+      </div>
+      <div class="problem-card fade-up">
+        <div class="problem-number">02</div>
+        <div class="problem-icon">❓</div>
+        <h3 class="problem-title" data-i18n="prob2t">Non sai mai se il prezzo è giusto.</h3>
+        <p class="problem-desc" data-i18n="prob2d">Hai alzato troppo poco venerdì scorso? Avresti potuto vendere di più? Senza dati e automazione, queste domande restano senza risposta - e senza valore.</p>
+      </div>
+      <div class="problem-card fade-up">
+        <div class="problem-number">03</div>
+        <div class="problem-icon">🕐</div>
+        <h3 class="problem-title" data-i18n="prob3t">Il tempo che sprechi sul pricing non torna.</h3>
+        <p class="problem-desc" data-i18n="prob3d">Controllare Booking, guardare i competitor, aggiornare manualmente ogni camera - sono ore ogni settimana che producono solo un prezzo già vecchio.</p>
+      </div>
+      <div class="problem-card fade-up">
+        <div class="problem-number">04</div>
+        <div class="problem-icon">⚡</div>
+        <h3 class="problem-title" data-i18n="prob4t">Non sei pronto ad eventi improvvisi.</h3>
+        <p class="problem-desc" data-i18n="prob4d">Concerto in città, cancellazioni, fiere: la domanda cambia in poche ore. Senza aggiornamenti dinamici perdi opportunità e margine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="howEyebrow">Come funziona</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="howTitle">Un percorso chiaro,<br><em>senza complessità.</em></h2>
+      <p class="section-subtitle" data-i18n="howSub">Evolve continuamente, tra analisi esperta umana e automazione avanzata AI.</p>
+    </div>
+
+    <div class="steps-container">
+      <div class="steps-connector"></div>
+      <div class="step-card fade-up">
+        <div class="step-number-ring"><span class="step-number">01</span></div>
+        <div class="step-icon">🤝</div>
+        <div class="step-title" data-i18n="step1t">Consulenza gratuita</div>
+        <p class="step-desc" data-i18n="step1d">Parliamo della tua struttura e di come stai gestendo oggi il pricing. Capisci subito dove c'è margine di miglioramento.</p>
+      </div>
+      <div class="step-card fade-up">
+        <div class="step-number-ring"><span class="step-number">02</span></div>
+        <div class="step-icon">📊</div>
+        <div class="step-title" data-i18n="step2t">Analisi del tuo mercato</div>
+        <p class="step-desc" data-i18n="step2d">Analizziamo domanda, competitor, eventi e andamento. Individuiamo dove stai perdendo opportunità.</p>
+      </div>
+      <div class="step-card fade-up">
+        <div class="step-number-ring"><span class="step-number">03</span></div>
+        <div class="step-icon">⚙️</div>
+        <div class="step-title" data-i18n="step3t">Attivazione</div>
+        <p class="step-desc" data-i18n="step3d">Alfred entra in funzione e inizia ad adattarsi al tuo mercato. Nessuna configurazione complessa, nessun intervento manuale.</p>
+      </div>
+      <div class="step-card fade-up">
+        <div class="step-number-ring"><span class="step-number">04</span></div>
+        <div class="step-icon">📈</div>
+        <div class="step-title" data-i18n="step4t">Autonomia continua</div>
+        <p class="step-desc" data-i18n="step4d">Alfred lavora in autonomia e aggiorna continuamente ogni camera della tua struttura, tenendo conto sia del mercato sia delle indicazioni che gli dai.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DASHBOARD ===== -->
+<section id="dashboard">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="dashEyebrow">Live Dashboard</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="dashTitle">Le tue proprietà,<br><em>tutte sotto controllo.</em></h2>
+      <p class="section-subtitle" data-i18n="dashSub">Prezzi aggiornati in automatico, revenue in crescita, nessun lavoro manuale. Questo è Alfred in azione.</p>
+    </div>
+
+    <div class="dashboard-wrapper fade-up">
+      <div class="dashboard-topbar">
+        <div class="dash-dots">
+          <div class="dash-dot red"></div>
+          <div class="dash-dot yellow"></div>
+          <div class="dash-dot green"></div>
+        </div>
+        <div class="dashboard-title-bar" data-i18n="dashBarTitle">Alfred Dashboard - Portfolio Overview</div>
+        <div class="dashboard-status" data-i18n="dashStatus">Sistema attivo</div>
+      </div>
+
+      <div class="dashboard-metrics">
+        <div class="dash-metric">
+          <div class="dash-metric-label" data-i18n="dm1l">RevPAR</div>
+          <div class="dash-metric-value">€127</div>
+          <div class="dash-metric-delta" data-i18n="dm1d">↑ +28% vs baseline</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dash-metric-label" data-i18n="dm2l">ADR Medio</div>
+          <div class="dash-metric-value">€148</div>
+          <div class="dash-metric-delta" data-i18n="dm2d">↑ +€23 oggi</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dash-metric-label" data-i18n="dm3l">Occupazione</div>
+          <div class="dash-metric-value">82%</div>
+          <div class="dash-metric-delta" data-i18n="dm3d">↑ +7pp vs mese scorso</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dash-metric-label" data-i18n="dm4l">Aggiornamenti oggi</div>
+          <div class="dash-metric-value">6×</div>
+          <div class="dash-metric-delta" data-i18n="dm4d">Prossimo: 18:00</div>
+        </div>
+      </div>
+
+      <div class="dashboard-properties">
+        <div class="property-card shimmer">
+          <div class="property-avatar">🏨</div>
+          <div class="property-info">
+            <div class="property-name" data-i18n="prop1n">Hotel Marconi</div>
+            <div class="property-meta" data-i18n="prop1m">12 camere · Roma Centro · Ultimo aggiornamento 14:00</div>
+          </div>
+          <div class="property-price-block">
+            <div class="property-price">€148</div>
+            <div class="property-delta" data-i18n="prop1d">↑ +€23 oggi</div>
+          </div>
+          <div class="property-badge badge-auto" data-i18n="badgeAuto">Automatic</div>
+        </div>
+
+        <div class="property-card shimmer">
+          <div class="property-avatar">🏡</div>
+          <div class="property-info">
+            <div class="property-name" data-i18n="prop2n">B&amp;B Mazzini</div>
+            <div class="property-meta" data-i18n="prop2m">6 camere · Firenze · Evento locale: +12% domanda</div>
+          </div>
+          <div class="property-price-block">
+            <div class="property-price">€89</div>
+            <div class="property-delta" data-i18n="prop2d">↑ +€11 oggi</div>
+          </div>
+          <div class="property-badge badge-live" data-i18n="badgeLive">Live</div>
+        </div>
+
+        <div class="property-card shimmer">
+          <div class="property-avatar">✨</div>
+          <div class="property-info">
+            <div class="property-name" data-i18n="prop3n">Navona Suite</div>
+            <div class="property-meta" data-i18n="prop3m">3 unità · Roma Navona · Weekend premium</div>
+          </div>
+          <div class="property-price-block">
+            <div class="property-price">€210</div>
+            <div class="property-delta" data-i18n="prop3d">↑ +€35 oggi</div>
+          </div>
+          <div class="property-badge badge-event" data-i18n="badgeEvent">Evento</div>
+        </div>
+
+        <div class="property-card shimmer">
+          <div class="property-avatar">🔑</div>
+          <div class="property-info">
+            <div class="property-name" data-i18n="prop4n">Residenza Degli Artisti</div>
+            <div class="property-meta" data-i18n="prop4m">8 unità · Milano · Connesso via Smoobu</div>
+          </div>
+          <div class="property-price-block">
+            <div class="property-price">€165</div>
+            <div class="property-delta" data-i18n="prop4d">↑ +€18 oggi</div>
+          </div>
+          <div class="property-badge badge-auto" data-i18n="badgeAuto">Automatic</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TIMELINE ===== -->
+<section id="timeline">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="tlEyebrow">Una giornata reale</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="tlTitle">Mentre tu gestisci la struttura,<br><em>Alfred lavora.</em></h2>
+      <p class="section-subtitle" data-i18n="tlSub">Questo è quello che succede in 24 ore - automaticamente, senza che tu faccia nulla.</p>
+    </div>
+
+    <div class="timeline-container fade-up">
+      <div class="timeline-header">
+        <div class="timeline-title" data-i18n="tlHeadTitle">Hotel Marconi · Roma · Oggi</div>
+        <div class="timeline-date" data-i18n="tlHeadDate">Mercoledì 2 Aprile 2026</div>
+      </div>
+
+      <div class="chart-area">
+        <svg class="chart-svg" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#C9A96E" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#C9A96E" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#9B7A45"/>
+              <stop offset="50%" stop-color="#C9A96E"/>
+              <stop offset="100%" stop-color="#E2C88A"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="0" y1="140" x2="900" y2="140" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <line x1="0" y1="100" x2="900" y2="100" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <line x1="0" y1="60" x2="900" y2="60" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <line x1="0" y1="20" x2="900" y2="20" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <!-- Price labels -->
+          <text x="8" y="143" fill="rgba(255,255,255,0.25)" font-size="10" font-family="sans-serif">€100</text>
+          <text x="8" y="103" fill="rgba(255,255,255,0.25)" font-size="10" font-family="sans-serif">€120</text>
+          <text x="8" y="63" fill="rgba(255,255,255,0.25)" font-size="10" font-family="sans-serif">€145</text>
+          <text x="8" y="23" fill="rgba(255,255,255,0.25)" font-size="10" font-family="sans-serif">€165</text>
+          <!-- Area fill -->
+          <path d="M45,125 L130,115 L220,90 L310,50 L400,50 L490,35 L580,50 L670,80 L760,60 L855,75 L855,140 L45,140 Z" fill="url(#priceGrad)"/>
+          <!-- Price line -->
+          <path d="M45,125 L130,115 L220,90 L310,50 L400,50 L490,35 L580,50 L670,80 L760,60 L855,75" fill="none" stroke="url(#lineGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Event dots -->
+          <circle cx="220" cy="90" r="5" fill="#C9A96E"/>
+          <circle cx="310" cy="50" r="6" fill="#C084FC" opacity="0.9"/>
+          <circle cx="490" cy="35" r="5" fill="#C9A96E"/>
+          <circle cx="760" cy="60" r="5" fill="#C9A96E"/>
+          <!-- Time labels -->
+          <text x="40" y="158" fill="rgba(255,255,255,0.3)" font-size="9" font-family="sans-serif">06:00</text>
+          <text x="210" y="158" fill="rgba(255,255,255,0.3)" font-size="9" font-family="sans-serif">09:15</text>
+          <text x="395" y="158" fill="rgba(255,255,255,0.3)" font-size="9" font-family="sans-serif">13:00</text>
+          <text x="480" y="158" fill="rgba(255,255,255,0.3)" font-size="9" font-family="sans-serif">17:30</text>
+          <text x="750" y="158" fill="rgba(255,255,255,0.3)" font-size="9" font-family="sans-serif">21:00</text>
+        </svg>
+      </div>
+
+      <div class="timeline-events">
+        <div class="tl-event">
+          <div class="tl-time">06:00</div>
+          <div class="tl-desc" data-i18n="tl1d">Scan mattina - occupazione 67%, competitor +€15</div>
+          <div class="tl-price" data-i18n="tl1p">€115 → €128</div>
+          <div class="tl-direction" data-i18n="tl1dir">↑ +€13 auto</div>
+        </div>
+        <div class="tl-event" style="background: rgba(192,132,252,0.06); border: 1px solid rgba(192,132,252,0.2);">
+          <div class="tl-time" style="color: #C084FC;">09:15</div>
+          <div class="tl-desc" data-i18n="tl2d">Evento: concerto Arena Civica - spike domanda</div>
+          <div class="tl-price" data-i18n="tl2p">€128 → €155</div>
+          <div class="tl-direction" style="color: #C084FC;" data-i18n="tl2dir">↑ +€27 evento</div>
+        </div>
+        <div class="tl-event">
+          <div class="tl-time">13:00</div>
+          <div class="tl-desc" data-i18n="tl3d">Scan pomeriggio - occupazione stabile</div>
+          <div class="tl-price" data-i18n="tl3p">€155 invariato</div>
+          <div class="tl-direction" style="color: var(--white-50);" data-i18n="tl3dir">→ nessun cambio</div>
+        </div>
+        <div class="tl-event">
+          <div class="tl-time">17:30</div>
+          <div class="tl-desc" data-i18n="tl4d">Hotel vicino: disponibilità last-minute</div>
+          <div class="tl-price" data-i18n="tl4p">€155 → €162</div>
+          <div class="tl-direction" data-i18n="tl4dir">↑ +€7 cattura</div>
+        </div>
+        <div class="tl-event">
+          <div class="tl-time">21:00</div>
+          <div class="tl-desc" data-i18n="tl5d">Finestra evento chiusa - domanda in calo</div>
+          <div class="tl-price" data-i18n-html="tl5p"><span class="price-down">€162</span> → <span class="price-up">€138</span></div>
+          <div class="tl-direction" data-i18n="tl5dir">↓ ottimizzazione</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== ROADMAP ===== -->
+<section id="roadmap">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="rmEyebrow">Roadmap prodotto</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="rmTitle">Pricing oggi.<br><em>Molto di più domani.</em></h2>
+      <p class="section-subtitle" data-i18n="rmSub">Alfred cresce con te. Ogni modulo si attiva sulla stessa piattaforma, senza migrazioni.</p>
+    </div>
+
+    <div class="roadmap-track">
+      <div class="roadmap-item fade-up">
+        <div class="roadmap-icon-wrap active">💰</div>
+        <div>
+          <div class="roadmap-phase active" data-i18n="rm1ph">Fase 1</div>
+          <div class="roadmap-label" data-i18n="rm1lb">Pricing Intelligence</div>
+          <div class="roadmap-sub" data-i18n="rm1sub">Aggiornamento automatico prezzi. Attivo oggi.</div>
+          <div class="roadmap-badge live" data-i18n="rm1bd">Live ora</div>
+        </div>
+      </div>
+      <div class="roadmap-item fade-up">
+        <div class="roadmap-icon-wrap coming">⭐</div>
+        <div>
+          <div class="roadmap-phase coming" data-i18n="rm2ph">Fase 2</div>
+          <div class="roadmap-label coming" data-i18n="rm2lb">Review Agent</div>
+          <div class="roadmap-sub" style="color: var(--white-40, var(--white-50));" data-i18n="rm2sub">Più recensioni positive, più fiducia, più prenotazioni dirette per la tua struttura.</div>
+          <div class="roadmap-badge q2" data-i18n="rm2bd">Q3 2026</div>
+        </div>
+      </div>
+      <div class="roadmap-item fade-up">
+        <div class="roadmap-icon-wrap coming">💬</div>
+        <div>
+          <div class="roadmap-phase coming" data-i18n="rm3ph">Fase 3</div>
+          <div class="roadmap-label coming" data-i18n="rm3lb">Chat Support</div>
+          <div class="roadmap-sub" style="color: var(--white-40, var(--white-50));" data-i18n="rm3sub">Assistenza ospiti automatizzata via chatbot. H24 senza il tuo intervento.</div>
+          <div class="roadmap-badge q3" data-i18n="rm3bd">Q4 2026</div>
+        </div>
+      </div>
+      <div class="roadmap-item fade-up">
+        <div class="roadmap-icon-wrap coming">🛎️</div>
+        <div>
+          <div class="roadmap-phase coming" data-i18n="rm4ph">Fase 4</div>
+          <div class="roadmap-label coming" data-i18n="rm4lb">Concierge</div>
+          <div class="roadmap-sub" style="color: var(--white-40, var(--white-50));" data-i18n="rm4sub">Servizio concierge digitale via SMS/WhatsApp. Upsell e guest experience automatizzati.</div>
+          <div class="roadmap-badge q4" data-i18n="rm4bd">2027</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TESTIMONIALS ===== -->
+<section id="testimonials">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="testEyebrow">Recensioni</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="testTitle">Feedback da<br><em>strutture come la tua.</em></h2>
+      <p class="section-subtitle" data-i18n="testSub">Esempi anonimizzati: nomi, importi e periodi sono stati modificati, ma i contesti sono realistici.</p>
+    </div>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card fade-up">
+        <div class="testimonial-stars">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+        </div>
+        <p class="testimonial-text" data-i18n="t1q">«Siamo undici camere, famiglia. Il revenue management lo vedevo solo sui grandi brand. Qui il tema era capire quando alzare sui ponti senza restare fuori mercato. Due mesi dopo siamo ancora a regolare i tiri, ma almeno non partiamo sempre bassi sui weekend.»</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">L</div>
+          <div>
+            <div class="author-name" data-i18n="t1n">Luca V.</div>
+            <div class="author-meta" data-i18n="t1m">Hotel gestito in famiglia · 11 camere · provincia di Treviso</div>
+          </div>
+        </div>
+        <div class="testimonial-delta">
+          <div class="delta-value" data-i18n="t1v">ADR weekend</div>
+          <div class="delta-label" data-i18n="t1l">in linea con il quartiere (vs trimestre precedente)</div>
+        </div>
+      </div>
+
+      <div class="testimonial-card fade-up">
+        <div class="testimonial-stars">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+        </div>
+        <p class="testimonial-text" data-i18n="t2q">«Sei camere vicino al centro: tra check-in e turni non ho mai tempo di guardare Booking come si deve. Ricevere un riepilogo serale con cosa è cambiato intorno a me mi ha tolto la sensazione di correre sempre in ritardo.»</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">G</div>
+          <div>
+            <div class="author-name" data-i18n="t2n">Giulia T.</div>
+            <div class="author-meta" data-i18n="t2m">B&amp;B · Bologna</div>
+          </div>
+        </div>
+        <div class="testimonial-delta">
+          <div class="delta-value" data-i18n="t2v">Tempo pricing</div>
+          <div class="delta-label" data-i18n="t2l">da ~2 h/settimana a ~25 minuti (stima interna)</div>
+        </div>
+      </div>
+
+      <div class="testimonial-card fade-up">
+        <div class="testimonial-stars">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+        </div>
+        <p class="testimonial-text" data-i18n="t3q">«In fiera alziamo i prezzi con paura: troppo e resti vuoto, poco e lavori quasi in perdita. Abbiamo provato una scaletta più reattiva: qualche notte ha pagato meglio, altre no. Comunque meno stress che aggiornare a mano ogni volta che il telefono squilla.»</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">A</div>
+          <div>
+            <div class="author-name" data-i18n="t3n">Andrea P.</div>
+            <div class="author-meta" data-i18n="t3m">Guest house · Milano</div>
+          </div>
+        </div>
+        <div class="testimonial-delta">
+          <div class="delta-value" data-i18n="t3v">Notte evento</div>
+          <div class="delta-label" data-i18n="t3l">tariffa media + vs stessa settimana fuori evento (campione interno)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <div class="small-cap" data-i18n="prEyebrow">Prezzi</div>
+      <div class="divider"></div>
+      <h2 class="section-title" data-i18n-html="prTitle">Semplice.<br><em>Nessuna sorpresa.</em></h2>
+      <p class="section-subtitle" data-i18n="prSub">Dati reali da strutture che hanno già iniziato.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card shimmer fade-up">
+        <div class="pricing-tier" data-i18n="prT1">Fino a 9 camere</div>
+        <div class="pricing-price">
+          <span class="price-currency">€</span><span class="price-amount">100</span>
+        </div>
+        <div class="price-period" data-i18n="prP1">per camera / al mese · fino a 9 camere</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li data-i18n="prF1a">Auto-pricing automatico</li>
+          <li data-i18n="prF1b">Dashboard RevPAR/ADR</li>
+          <li data-i18n="prF1c">Baseline dal giorno 0</li>
+          <li data-i18n="prF1d">Integrazione CSV/API</li>
+          <li data-i18n="prF1e">Consulenza strategica inclusa</li>
+        </ul>
+        <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="pricing-cta outline" data-i18n="prCta1">Richiedi consulenza</a>
+      </div>
+
+      <div class="pricing-card featured shimmer fade-up">
+        <div class="pricing-ribbon" data-i18n="prRibbon">10–20 camere</div>
+        <div class="pricing-tier" data-i18n="prT2">Volume pricing</div>
+        <div class="pricing-price">
+          <span class="price-currency">€</span><span class="price-amount">50–90</span>
+        </div>
+        <div class="price-period" data-i18n="prP2">per camera / al mese · da 10 a 20 camere</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li data-i18n="prF2a">Tutto del piano fino a 9 camere</li>
+          <li data-i18n="prF2b">Prezzo per camera in base al volume</li>
+          <li data-i18n="prF2c">Alert eventi real-time</li>
+          <li data-i18n="prF2d">Report settimanale delta</li>
+          <li data-i18n="prF2e">Override manuale sempre</li>
+        </ul>
+        <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="pricing-cta primary" data-i18n="prCta2">Richiedi consulenza</a>
+      </div>
+
+      <div class="pricing-card shimmer fade-up">
+        <div class="pricing-tier" data-i18n="prT3">Hai più di 20 camere?</div>
+        <div class="pricing-price">
+          <span class="price-amount" style="font-size:2.2rem" data-i18n="prTalk">Parliamone</span>
+        </div>
+        <div class="price-period" data-i18n="prP3">Pricing personalizzato per strutture più grandi</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li data-i18n="prF3a">Setup su misura</li>
+          <li data-i18n="prF3b">Regole di pricing personalizzate</li>
+          <li data-i18n="prF3c">Onboarding dedicato</li>
+          <li data-i18n="prF3d">Supporto prioritario</li>
+          <li data-i18n="prF3e">Consulenza iniziale inclusa</li>
+        </ul>
+        <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="pricing-cta outline" data-i18n="prCta3">Parliamo →</a>
+      </div>
+    </div>
+
+    <p class="pricing-note">
+      <span data-i18n="prNote">Tutti i piani includono una consulenza iniziale gratuita.</span> <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" data-i18n="prNoteLink">Parliamo della tua struttura senza impegno.</a>
+    </p>
+  </div>
+</section>
+
+<!-- ===== FINAL CTA ===== -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-badge" data-i18n="ctaBadge">Consulenza gratuita · Nessun impegno</div>
+
+    <h2 class="cta-title" data-i18n-html="ctaTitle">
+      <em>Consulenza gratuita.</em><br>
+      Poi decidi tu.
+    </h2>
+
+    <p class="cta-desc" data-i18n="ctaDesc">
+      Parti in modo semplice, con un percorso chiaro fin da subito.
+    </p>
+
+    <a href="https://calendly.com/consulenzamyalfred/30min" target="_blank" rel="noopener noreferrer" class="btn-primary shimmer" data-i18n="ctaBtn">
+      Richiedi la consulenza gratuita →
+    </a>
+
+    <p style="margin-top: 24px; font-size: 0.82rem; color: var(--white-40, var(--white-50));">
+      €100 per room fino a 9 rooms · €50–90 per room da 10 a 20 rooms
+    </p>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-logo">Alfred</div>
+  <p class="footer-tagline" data-i18n="footTag">I tuoi prezzi si aggiornano da soli.</p>
+  <div class="footer-links">
+    <a href="#how" data-i18n="footHow">Come funziona</a>
+    <a href="#pricing" data-i18n="footPrice">Prezzi</a>
+    <a href="#roadmap" data-i18n="footRoad">Roadmap</a>
+    <a href="mailto:pilota@alfred.ai" data-i18n="footContact">Contatto</a>
+    <a href="mailto:pilota@alfred.ai" data-i18n="footPrivacy">Privacy</a>
+  </div>
+  <p class="footer-copy">
+    <span data-i18n="footCopy">© 2026 Alfred. Fatto in Italia.</span> · <a href="mailto:pilota@alfred.ai">pilota@alfred.ai</a>
+  </p>
+</footer>
+
+<script>
+  // Navbar scroll effect
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 60) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  });
+
+  // Intersection Observer for fade-up animations
+  const fadeEls = document.querySelectorAll('.fade-up');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  fadeEls.forEach(el => observer.observe(el));
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // Animated counter for stats (runs once on page load)
+  function animateValue(el, start, end, duration, prefix = '', suffix = '') {
+    let startTime = null;
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.floor(start + (end - start) * eased);
+      el.textContent = prefix + value + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // Price ticker animation on dashboard cards
+  function tickPrice() {
+    const prices = document.querySelectorAll('.property-price');
+    prices.forEach(el => {
+      const base = parseInt(el.textContent.replace('€', ''));
+      const drift = Math.floor(Math.random() * 5) - 2;
+      const newPrice = base + drift;
+      if (Math.abs(drift) > 0) {
+        el.style.transition = 'color 0.4s ease';
+        el.style.color = drift > 0 ? '#4ADE80' : '#F87171';
+        el.textContent = '€' + newPrice;
+        setTimeout(() => {
+          el.style.color = '';
+        }, 800);
+      }
+    });
+  }
+  setInterval(tickPrice, 8000);
+
+  /* ── VIDEO AUTOPLAY - gesture-unlock strategy ── */
+  (function(){
+    var v = document.getElementById('hero-video');
+    if(!v) return;
+    function unlock(){
+      v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+      v.play().catch(function(){});
+    }
+    v.play().catch(function(){ /* initial silent autoplay blocked, wait for gesture */ });
+    document.addEventListener('click', unlock, {once:true});
+    document.addEventListener('touchstart', unlock, {once:true});
+    document.addEventListener('scroll', unlock, {once:true});
+  })();
+</script>
+
+</body>
+</html>
